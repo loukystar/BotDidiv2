@@ -15,6 +15,9 @@ app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 # Instance globale du client Discord
 discord_client = None
 
+# Configuration du canal par défaut
+DEFAULT_CHANNEL_ID = os.getenv('DEFAULT_CHANNEL_ID', '')  # ID du canal prédéfini
+
 @app.route('/')
 def index():
     """Page principale de l'interface web"""
@@ -124,7 +127,7 @@ def get_channels(guild_id):
 
 @app.route('/api/send-message', methods=['POST'])
 def send_message():
-    """Envoyer un message avec mention de rôle"""
+    """Envoyer un message avec mention de rôle dans le canal prédéfini"""
     global discord_client
     
     if not discord_client or not discord_client.is_connected():
@@ -133,12 +136,17 @@ def send_message():
     try:
         data = request.get_json()
         guild_id = data.get('guild_id')
-        channel_id = data.get('channel_id')
         role_id = data.get('role_id')
         custom_message = data.get('message', '').strip()
         
-        if not all([guild_id, channel_id, role_id]):
-            return jsonify({'success': False, 'error': 'Tous les champs sont requis'})
+        # Utiliser le canal prédéfini ou celui fourni
+        channel_id = DEFAULT_CHANNEL_ID or data.get('channel_id')
+        
+        if not all([guild_id, role_id]):
+            return jsonify({'success': False, 'error': 'Serveur et rôle requis'})
+            
+        if not channel_id:
+            return jsonify({'success': False, 'error': 'Aucun canal configuré'})
         
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -246,10 +254,24 @@ def auto_connect():
         logger.error(f"Erreur lors de la connexion automatique : {str(e)}")
         return jsonify({'success': False, 'error': f'Erreur de connexion automatique : {str(e)}'})
 
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    """Récupérer la configuration actuelle"""
+    return jsonify({
+        'has_token': bool(os.getenv('DISCORD_BOT_TOKEN', '')),
+        'has_default_channel': bool(DEFAULT_CHANNEL_ID),
+        'default_channel_id': DEFAULT_CHANNEL_ID if DEFAULT_CHANNEL_ID else None
+    })
+
 if __name__ == '__main__':
     # Le token peut être fourni via une variable d'environnement pour un usage automatique
     default_token = os.getenv('DISCORD_BOT_TOKEN', '')
     if default_token:
         logger.info("Token Discord détecté dans les variables d'environnement")
+    
+    if DEFAULT_CHANNEL_ID:
+        logger.info(f"Canal par défaut configuré : {DEFAULT_CHANNEL_ID}")
+    else:
+        logger.info("Aucun canal par défaut configuré")
     
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -6,7 +6,11 @@ let appState = {
     channels: [],
     selectedGuild: null,
     selectedRole: null,
-    selectedChannel: null
+    selectedChannel: null,
+    config: {
+        hasDefaultChannel: false,
+        defaultChannelId: null
+    }
 };
 
 // DOM elements
@@ -48,6 +52,7 @@ const elements = {
 // Initialize application
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
+    loadConfiguration();
     checkConnectionStatus();
     loadLogs();
     
@@ -217,12 +222,21 @@ async function handleSendMessage(e) {
     }
     
     const guildId = elements.guildSelect.value;
-    const channelId = elements.channelSelect.value;
     const roleId = elements.roleSelect.value;
     const message = elements.customMessage.value.trim();
     
-    if (!guildId || !channelId || !roleId) {
-        showAlert('Veuillez sélectionner un serveur, un channel et un rôle', 'warning');
+    // Utiliser le canal prédéfini si configuré, sinon celui sélectionné
+    const channelId = appState.config.hasDefaultChannel 
+        ? appState.config.defaultChannelId 
+        : elements.channelSelect.value;
+    
+    if (!guildId || !roleId) {
+        showAlert('Veuillez sélectionner un serveur et un rôle', 'warning');
+        return;
+    }
+    
+    if (!channelId) {
+        showAlert('Aucun canal configuré pour l\'envoi', 'warning');
         return;
     }
     
@@ -525,6 +539,41 @@ function getAlertIcon(type) {
         info: 'info'
     };
     return icons[type] || 'info';
+}
+
+// Logging
+// Load configuration
+async function loadConfiguration() {
+    try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        
+        appState.config.hasDefaultChannel = config.has_default_channel;
+        appState.config.defaultChannelId = config.default_channel_id;
+        
+        updateChannelInterface();
+    } catch (error) {
+        console.error('Erreur de chargement de la configuration:', error);
+    }
+}
+
+// Update channel interface based on configuration
+function updateChannelInterface() {
+    const channelContainer = document.getElementById('channelSelectContainer');
+    const channelInfo = document.getElementById('channelInfo');
+    const channelSelect = elements.channelSelect;
+    
+    if (appState.config.hasDefaultChannel) {
+        // Masquer la sélection de canal et afficher l'info
+        channelSelect.style.display = 'none';
+        channelInfo.innerHTML = `<i class="text-success">✓ Canal prédéfini configuré (ID: ${appState.config.defaultChannelId})</i>`;
+        channelSelect.removeAttribute('required');
+    } else {
+        // Afficher la sélection normale
+        channelSelect.style.display = 'block';
+        channelInfo.innerHTML = 'Sélectionnez le canal de destination';
+        channelSelect.setAttribute('required', 'required');
+    }
 }
 
 // Logging
