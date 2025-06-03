@@ -70,17 +70,20 @@
                                             <label for="botToken" class="form-label">Token du Bot Discord</label>
                                             <div class="input-group">
                                                 <input type="password" class="form-control" id="botToken" 
-                                                       placeholder="Entrez le token de votre bot Discord" required>
+                                                       placeholder="Token sécurisé détecté - Laissez vide pour utiliser le token configuré">
                                                 <button class="btn btn-outline-secondary" type="button" id="toggleToken">
                                                     <i data-feather="eye"></i>
                                                 </button>
                                             </div>
                                             <div class="form-text">
-                                                Vous pouvez créer un bot et obtenir son token sur le 
-                                                <a href="https://discord.com/developers/applications" target="_blank">portail développeur Discord</a>
+                                                Un token sécurisé est configuré. Vous pouvez vous connecter directement ou utiliser un token différent.
                                             </div>
                                         </div>
                                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                            <button type="button" class="btn btn-success" id="autoConnectBtn">
+                                                <i data-feather="zap"></i>
+                                                Connexion Rapide
+                                            </button>
                                             <button type="submit" class="btn btn-primary" id="connectBtn">
                                                 <i data-feather="wifi"></i>
                                                 Se Connecter

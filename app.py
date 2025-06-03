@@ -22,12 +22,15 @@ def index():
 
 @app.route('/api/connect', methods=['POST'])
 def connect_discord():
-    """Connecter le bot Discord avec le token fourni"""
+    """Connecter le bot Discord avec le token fourni ou celui des variables d'environnement"""
     global discord_client
     
     try:
         data = request.get_json()
-        token = data.get('token', '').strip()
+        provided_token = data.get('token', '').strip() if data else ''
+        
+        # Utiliser le token fourni ou celui des variables d'environnement
+        token = provided_token or os.getenv('DISCORD_BOT_TOKEN', '')
         
         if not token:
             return jsonify({'success': False, 'error': 'Token Discord requis'})
@@ -211,6 +214,37 @@ def disconnect_discord():
             return jsonify({'success': False, 'error': f'Erreur de déconnexion : {str(e)}'})
     else:
         return jsonify({'success': True, 'message': 'Aucune connexion active'})
+
+@app.route('/api/auto-connect', methods=['POST'])
+def auto_connect():
+    """Connexion automatique avec le token des variables d'environnement"""
+    global discord_client
+    
+    token = os.getenv('DISCORD_BOT_TOKEN', '')
+    if not token:
+        return jsonify({'success': False, 'error': 'Aucun token dans les variables d\'environnement'})
+    
+    try:
+        # Créer une nouvelle instance du client
+        discord_client = DiscordClient()
+        
+        # Tenter la connexion de manière asynchrone
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            success = loop.run_until_complete(discord_client.connect_and_validate(token))
+            if success:
+                logger.info("Connexion automatique Discord réussie")
+                return jsonify({'success': True, 'message': 'Connexion automatique réussie'})
+            else:
+                return jsonify({'success': False, 'error': 'Échec de la connexion automatique Discord'})
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logger.error(f"Erreur lors de la connexion automatique : {str(e)}")
+        return jsonify({'success': False, 'error': f'Erreur de connexion automatique : {str(e)}'})
 
 if __name__ == '__main__':
     # Le token peut être fourni via une variable d'environnement pour un usage automatique

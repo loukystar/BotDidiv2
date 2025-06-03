@@ -24,6 +24,7 @@ const elements = {
     
     // Buttons
     connectBtn: document.getElementById('connectBtn'),
+    autoConnectBtn: document.getElementById('autoConnectBtn'),
     disconnectBtn: document.getElementById('disconnectBtn'),
     sendBtn: document.getElementById('sendBtn'),
     toggleToken: document.getElementById('toggleToken'),
@@ -68,6 +69,7 @@ function initializeEventListeners() {
     elements.messageForm.addEventListener('submit', handleSendMessage);
     
     // Buttons
+    elements.autoConnectBtn.addEventListener('click', handleAutoConnection);
     elements.disconnectBtn.addEventListener('click', handleDisconnection);
     elements.toggleToken.addEventListener('click', toggleTokenVisibility);
     elements.clearLogs.addEventListener('click', clearLogs);
@@ -106,10 +108,6 @@ async function handleConnection(e) {
     e.preventDefault();
     
     const token = elements.botToken.value.trim();
-    if (!token) {
-        showAlert('Veuillez entrer un token Discord valide', 'danger');
-        return;
-    }
     
     elements.loadingModal.show();
     elements.connectBtn.disabled = true;
@@ -142,6 +140,41 @@ async function handleConnection(e) {
     } finally {
         elements.loadingModal.hide();
         elements.connectBtn.disabled = false;
+    }
+}
+
+// Auto connection handling
+async function handleAutoConnection() {
+    elements.loadingModal.show();
+    elements.autoConnectBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/auto-connect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert('Connexion automatique réussie !', 'success');
+            await updateConnectionStatus(true);
+            addLog('Connexion automatique Discord établie', 'success');
+            
+            // Switch to message tab
+            document.querySelector('[data-tab="message"]').click();
+        } else {
+            showAlert(`Erreur de connexion automatique : ${data.error}`, 'danger');
+            addLog(`Échec de connexion automatique : ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showAlert(`Erreur de réseau : ${error.message}`, 'danger');
+        addLog(`Erreur de réseau : ${error.message}`, 'error');
+    } finally {
+        elements.loadingModal.hide();
+        elements.autoConnectBtn.disabled = false;
     }
 }
 
