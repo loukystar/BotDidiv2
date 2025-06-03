@@ -397,6 +397,33 @@ html {
     scroll-behavior: smooth;
 }
 
+/* Special message preview */
+.special-message-preview {
+    background-color: hsl(var(--surface));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.375rem;
+    padding: 1rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: hsl(var(--warning));
+    text-align: center;
+    line-height: 1.4;
+}
+
+.btn-warning {
+    background-color: hsl(var(--warning));
+    color: white;
+    border: none;
+}
+
+.btn-warning:hover {
+    background-color: hsl(var(--warning));
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+    color: white;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 8px;

@@ -111,6 +111,9 @@ function handleTabClick(e) {
     if (targetTab === 'message' && appState.connected) {
         loadGuilds();
     }
+    if (targetTab === 'special' && appState.connected) {
+        loadSpecialGuilds();
+    }
 }
 
 // Connection handling
@@ -582,6 +585,11 @@ async function updateConnectionStatus(connected, botData = null) {
         if (document.getElementById('messageTab').classList.contains('active')) {
             await loadGuilds();
         }
+        
+        // Load guilds for special message tab
+        if (document.getElementById('specialTab').classList.contains('active')) {
+            await loadSpecialGuilds();
+        }
     } else {
         elements.connectionStatus.textContent = 'Déconnecté';
         elements.connectionStatus.className = 'badge bg-secondary';
@@ -664,6 +672,36 @@ async function loadConfiguration() {
     } catch (error) {
         console.error('Erreur de chargement de la configuration:', error);
     }
+}
+
+// Load guilds for special message
+async function loadSpecialGuilds() {
+    if (!appState.connected) return;
+    
+    try {
+        const response = await fetch('/api/guilds');
+        const data = await response.json();
+        
+        if (data.success) {
+            updateSpecialGuildSelect(data.guilds);
+        } else {
+            showAlert(`Erreur de chargement des serveurs : ${data.error}`, 'danger');
+        }
+    } catch (error) {
+        showAlert(`Erreur de réseau : ${error.message}`, 'danger');
+    }
+}
+
+// Update special guild select
+function updateSpecialGuildSelect(guilds) {
+    elements.specialGuildSelect.innerHTML = '<option value="">Sélectionner un serveur...</option>';
+    
+    guilds.forEach(guild => {
+        const option = document.createElement('option');
+        option.value = guild.id;
+        option.textContent = `${guild.name} (${guild.member_count} membres)`;
+        elements.specialGuildSelect.appendChild(option);
+    });
 }
 
 // Update channel interface based on configuration
