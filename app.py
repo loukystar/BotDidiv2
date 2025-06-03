@@ -16,7 +16,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 discord_client = None
 
 # Configuration du canal par défaut
-DEFAULT_CHANNEL_ID = os.getenv('DEFAULT_CHANNEL_ID', '')  # ID du canal prédéfini
+DEFAULT_CHANNEL_ID = os.getenv('DEFAULT_CHANNEL_ID', '872776677523070979')  # ID du canal prédéfini
 
 @app.route('/')
 def index():
