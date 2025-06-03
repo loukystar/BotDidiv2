@@ -601,6 +601,12 @@ async function updateConnectionStatus(connected, botData = null) {
         if (document.getElementById('specialTab').classList.contains('active')) {
             await loadSpecialGuilds();
         }
+        
+        // Load guilds for auto-ping tab
+        if (document.getElementById('autopingsTab').classList.contains('active')) {
+            await loadAutoPingGuilds();
+            await loadAutoPingConfig();
+        }
     } else {
         elements.connectionStatus.textContent = 'Déconnecté';
         elements.connectionStatus.className = 'badge bg-secondary';
@@ -791,5 +797,187 @@ function loadLogs() {
         } else {
             elements.logsContainer.scrollTop = elements.logsContainer.scrollHeight;
         }
+    }
+}
+
+// Auto-ping configuration handling
+async function handleSaveAutoPing(e) {
+    e.preventDefault();
+    
+    if (!appState.connected) {
+        showAlert('Bot non connecté', 'danger');
+        return;
+    }
+    
+    const enabled = elements.autoPingEnabled.checked;
+    const guildId = elements.autoPingGuildSelect.value;
+    const roleId = elements.autoPingRoleSelect.value;
+    const intervalHours = parseInt(elements.autoPingInterval.value);
+    
+    if (enabled && (!guildId || !roleId)) {
+        showAlert('Veuillez sélectionner un serveur et un rôle pour activer l\'auto-ping', 'warning');
+        return;
+    }
+    
+    elements.loadingModal.show();
+    elements.saveAutoPingBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/auto-ping/config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                enabled: enabled,
+                guild_id: guildId || null,
+                role_id: roleId || null,
+                interval_hours: intervalHours
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert('Configuration auto-ping sauvegardée avec succès !', 'success');
+            addLog(`Auto-ping ${enabled ? 'activé' : 'désactivé'} - Intervalle: ${intervalHours}h`, 'info');
+            updateAutoPingStatus(data.config);
+        } else {
+            showAlert(`Erreur de configuration : ${data.error}`, 'danger');
+            addLog(`Échec de configuration auto-ping : ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showAlert(`Erreur de réseau : ${error.message}`, 'danger');
+        addLog(`Erreur de configuration auto-ping : ${error.message}`, 'error');
+    } finally {
+        elements.loadingModal.hide();
+        elements.saveAutoPingBtn.disabled = false;
+    }
+}
+
+// Auto-ping guild selection change
+async function handleAutoPingGuildChange() {
+    const guildId = elements.autoPingGuildSelect.value;
+    
+    // Reset role select
+    elements.autoPingRoleSelect.innerHTML = '<option value="">Sélectionner un rôle...</option>';
+    
+    if (guildId) {
+        await loadAutoPingRoles(guildId);
+    }
+}
+
+// Load guilds for auto-ping
+async function loadAutoPingGuilds() {
+    if (!appState.connected) return;
+    
+    try {
+        const response = await fetch('/api/guilds');
+        const data = await response.json();
+        
+        if (data.success) {
+            updateAutoPingGuildSelect(data.guilds);
+        } else {
+            showAlert(`Erreur de chargement des serveurs : ${data.error}`, 'danger');
+        }
+    } catch (error) {
+        showAlert(`Erreur de réseau : ${error.message}`, 'danger');
+    }
+}
+
+// Load roles for auto-ping
+async function loadAutoPingRoles(guildId) {
+    try {
+        const response = await fetch(`/api/roles/${guildId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateAutoPingRoleSelect(data.roles);
+        } else {
+            showAlert(`Erreur de chargement des rôles : ${data.error}`, 'danger');
+        }
+    } catch (error) {
+        showAlert(`Erreur de réseau : ${error.message}`, 'danger');
+    }
+}
+
+// Load auto-ping configuration
+async function loadAutoPingConfig() {
+    try {
+        const response = await fetch('/api/auto-ping/config');
+        const data = await response.json();
+        
+        if (data.success) {
+            const config = data.config;
+            elements.autoPingEnabled.checked = config.enabled;
+            elements.autoPingInterval.value = config.interval_hours;
+            
+            if (config.guild_id) {
+                elements.autoPingGuildSelect.value = config.guild_id;
+                await loadAutoPingRoles(config.guild_id);
+                if (config.role_id) {
+                    elements.autoPingRoleSelect.value = config.role_id;
+                }
+            }
+            
+            updateAutoPingStatus(config);
+        }
+    } catch (error) {
+        console.error('Erreur de chargement de la configuration auto-ping:', error);
+    }
+}
+
+// Update auto-ping guild select
+function updateAutoPingGuildSelect(guilds) {
+    elements.autoPingGuildSelect.innerHTML = '<option value="">Sélectionner un serveur...</option>';
+    
+    guilds.forEach(guild => {
+        const option = document.createElement('option');
+        option.value = guild.id;
+        option.textContent = `${guild.name} (${guild.member_count} membres)`;
+        elements.autoPingGuildSelect.appendChild(option);
+    });
+}
+
+// Update auto-ping role select
+function updateAutoPingRoleSelect(roles) {
+    elements.autoPingRoleSelect.innerHTML = '<option value="">Sélectionner un rôle...</option>';
+    
+    roles.forEach(role => {
+        const option = document.createElement('option');
+        option.value = role.id;
+        option.textContent = `${role.name} (${role.members} membres)`;
+        if (role.color && role.color !== '#000000') {
+            option.style.color = role.color;
+        }
+        elements.autoPingRoleSelect.appendChild(option);
+    });
+}
+
+// Update auto-ping status display
+function updateAutoPingStatus(config) {
+    const statusDiv = document.getElementById('autoPingStatus');
+    
+    if (config.enabled) {
+        const nextSend = config.last_sent 
+            ? new Date(new Date(config.last_sent).getTime() + config.interval_hours * 60 * 60 * 1000)
+            : new Date();
+            
+        statusDiv.innerHTML = `
+            <div class="mb-2">
+                <span class="badge bg-success">Actif</span>
+            </div>
+            <div><strong>Intervalle:</strong> ${config.interval_hours}h</div>
+            <div><strong>Canal:</strong> 872776677523070979</div>
+            <div><strong>Dernier envoi:</strong> ${config.last_sent ? new Date(config.last_sent).toLocaleString() : 'Jamais'}</div>
+            <div><strong>Prochain envoi:</strong> ${nextSend.toLocaleString()}</div>
+        `;
+    } else {
+        statusDiv.innerHTML = `
+            <div class="mb-2">
+                <span class="badge bg-secondary">Inactif</span>
+            </div>
+            <p class="text-muted">Auto-ping désactivé</p>
+        `;
     }
 }
