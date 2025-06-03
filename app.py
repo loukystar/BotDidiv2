@@ -258,8 +258,11 @@ def auto_connect():
             success = loop.run_until_complete(discord_client.connect_and_validate(token))
             if success:
                 logger.info("Connexion automatique Discord réussie")
+                # S'assurer que la variable globale est correctement définie
+                globals()['discord_client'] = discord_client
                 return jsonify({'success': True, 'message': 'Connexion automatique réussie'})
             else:
+                discord_client = None
                 return jsonify({'success': False, 'error': 'Échec de la connexion automatique Discord'})
         finally:
             loop.close()
