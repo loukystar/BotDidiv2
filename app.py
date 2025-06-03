@@ -254,6 +254,50 @@ def auto_connect():
         logger.error(f"Erreur lors de la connexion automatique : {str(e)}")
         return jsonify({'success': False, 'error': f'Erreur de connexion automatique : {str(e)}'})
 
+@app.route('/api/send-special-message', methods=['POST'])
+def send_special_message():
+    """Envoyer le message spécial 'Dark Vlad ouvre demain !' dans un canal spécifique"""
+    global discord_client
+    
+    if not discord_client or not discord_client.is_connected():
+        return jsonify({'success': False, 'error': 'Bot non connecté'})
+    
+    try:
+        data = request.get_json()
+        guild_id = data.get('guild_id')
+        channel_id = data.get('channel_id')
+        
+        if not all([guild_id, channel_id]):
+            return jsonify({'success': False, 'error': 'Serveur et canal requis'})
+        
+        # Message spécial fixe
+        special_message = "Dark Vlad ouvre demain !"
+        
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            result = loop.run_until_complete(
+                discord_client.send_special_message(
+                    int(guild_id), 
+                    int(channel_id), 
+                    special_message
+                )
+            )
+            
+            if result['success']:
+                logger.info(f"Message spécial envoyé avec succès dans {guild_id}/{channel_id}")
+                return jsonify(result)
+            else:
+                return jsonify(result)
+                
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logger.error(f"Erreur lors de l'envoi du message spécial : {str(e)}")
+        return jsonify({'success': False, 'error': f'Erreur d\'envoi : {str(e)}'})
+
 @app.route('/api/config', methods=['GET'])
 def get_config():
     """Récupérer la configuration actuelle"""

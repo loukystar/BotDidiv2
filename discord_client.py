@@ -213,6 +213,47 @@ class DiscordClient:
             logger.error(f"Erreur lors de l'envoi du message : {str(e)}")
             return {'success': False, 'error': f'Erreur inattendue : {str(e)}'}
     
+    async def send_special_message(self, guild_id, channel_id, message):
+        """Envoyer un message spécial sans mention de rôle"""
+        if not self.is_connected():
+            return {'success': False, 'error': 'Bot non connecté'}
+        
+        try:
+            guild = self.bot.get_guild(guild_id)
+            if not guild:
+                return {'success': False, 'error': 'Serveur non trouvé'}
+            
+            channel = guild.get_channel(channel_id)
+            if not channel:
+                return {'success': False, 'error': 'Channel non trouvé'}
+            
+            # Vérifier les permissions
+            permissions = channel.permissions_for(guild.me)
+            if not permissions.send_messages:
+                return {'success': False, 'error': 'Pas de permission d\'envoi de messages'}
+            
+            # Envoyer le message spécial
+            sent_message = await channel.send(message)
+            
+            logger.info(f"Message spécial envoyé dans {guild.name}#{channel.name}")
+            
+            return {
+                'success': True, 
+                'message': 'Message spécial envoyé avec succès',
+                'message_id': str(sent_message.id),
+                'channel': f"#{channel.name}",
+                'guild': guild.name,
+                'content': message
+            }
+            
+        except discord.Forbidden:
+            return {'success': False, 'error': 'Permissions insuffisantes'}
+        except discord.HTTPException as e:
+            return {'success': False, 'error': f'Erreur HTTP Discord : {str(e)}'}
+        except Exception as e:
+            logger.error(f"Erreur lors de l'envoi du message spécial : {str(e)}")
+            return {'success': False, 'error': f'Erreur inattendue : {str(e)}'}
+
     async def disconnect(self):
         """Déconnecter le bot"""
         if self.bot and not self.bot.is_closed():

@@ -25,12 +25,15 @@ const elements = {
     roleSelect: document.getElementById('roleSelect'),
     channelSelect: document.getElementById('channelSelect'),
     customMessage: document.getElementById('customMessage'),
+    specialGuildSelect: document.getElementById('specialGuildSelect'),
+    specialChannelSelect: document.getElementById('specialChannelSelect'),
     
     // Buttons
     connectBtn: document.getElementById('connectBtn'),
     autoConnectBtn: document.getElementById('autoConnectBtn'),
     disconnectBtn: document.getElementById('disconnectBtn'),
     sendBtn: document.getElementById('sendBtn'),
+    sendSpecialBtn: document.getElementById('sendSpecialBtn'),
     toggleToken: document.getElementById('toggleToken'),
     clearLogs: document.getElementById('clearLogs'),
     
@@ -72,6 +75,7 @@ function initializeEventListeners() {
     // Forms
     elements.connectionForm.addEventListener('submit', handleConnection);
     elements.messageForm.addEventListener('submit', handleSendMessage);
+    document.getElementById('specialMessageForm').addEventListener('submit', handleSendSpecialMessage);
     
     // Buttons
     elements.autoConnectBtn.addEventListener('click', handleAutoConnection);
@@ -84,6 +88,7 @@ function initializeEventListeners() {
     elements.roleSelect.addEventListener('change', handleRoleChange);
     elements.channelSelect.addEventListener('change', handleChannelChange);
     elements.customMessage.addEventListener('input', updateMessagePreview);
+    elements.specialGuildSelect.addEventListener('change', handleSpecialGuildChange);
     
     // Auto-refresh status
     setInterval(checkConnectionStatus, 30000); // Check every 30 seconds
@@ -181,6 +186,110 @@ async function handleAutoConnection() {
         elements.loadingModal.hide();
         elements.autoConnectBtn.disabled = false;
     }
+}
+
+// Special message handling
+async function handleSendSpecialMessage(e) {
+    e.preventDefault();
+    
+    if (!appState.connected) {
+        showAlert('Bot non connecté', 'danger');
+        return;
+    }
+    
+    const guildId = elements.specialGuildSelect.value;
+    const channelId = elements.specialChannelSelect.value;
+    
+    if (!guildId || !channelId) {
+        showAlert('Veuillez sélectionner un serveur et un canal', 'warning');
+        return;
+    }
+    
+    elements.loadingModal.show();
+    elements.sendSpecialBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/send-special-message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                guild_id: guildId,
+                channel_id: channelId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(`Message spécial envoyé avec succès dans ${data.channel} !`, 'success');
+            addLog(`Message spécial envoyé dans ${data.guild} ${data.channel}: "${data.content}"`, 'success');
+        } else {
+            showAlert(`Erreur d'envoi : ${data.error}`, 'danger');
+            addLog(`Échec d'envoi du message spécial : ${data.error}`, 'error');
+        }
+    } catch (error) {
+        showAlert(`Erreur de réseau : ${error.message}`, 'danger');
+        addLog(`Erreur d'envoi du message spécial : ${error.message}`, 'error');
+    } finally {
+        elements.loadingModal.hide();
+        elements.sendSpecialBtn.disabled = false;
+    }
+}
+
+// Special guild selection change
+async function handleSpecialGuildChange() {
+    const guildId = elements.specialGuildSelect.value;
+    
+    // Reset channel select
+    elements.specialChannelSelect.innerHTML = '<option value="">Sélectionner un channel...</option>';
+    
+    if (guildId) {
+        await loadSpecialChannels(guildId);
+    }
+}
+
+// Load channels for special message
+async function loadSpecialChannels(guildId) {
+    try {
+        const response = await fetch(`/api/channels/${guildId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateSpecialChannelSelect(data.channels);
+        } else {
+            showAlert(`Erreur de chargement des channels : ${data.error}`, 'danger');
+        }
+    } catch (error) {
+        showAlert(`Erreur de réseau : ${error.message}`, 'danger');
+    }
+}
+
+// Update special channel select
+function updateSpecialChannelSelect(channels) {
+    elements.specialChannelSelect.innerHTML = '<option value="">Sélectionner un channel...</option>';
+    
+    let currentCategory = '';
+    channels.forEach(channel => {
+        if (channel.category !== currentCategory) {
+            currentCategory = channel.category;
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = currentCategory;
+            elements.specialChannelSelect.appendChild(optgroup);
+        }
+        
+        const option = document.createElement('option');
+        option.value = channel.id;
+        option.textContent = `#${channel.name}${channel.nsfw ? ' (NSFW)' : ''}`;
+        
+        const optgroup = elements.specialChannelSelect.lastElementChild;
+        if (optgroup.tagName === 'OPTGROUP') {
+            optgroup.appendChild(option);
+        } else {
+            elements.specialChannelSelect.appendChild(option);
+        }
+    });
 }
 
 // Disconnection handling

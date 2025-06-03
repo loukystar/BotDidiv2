@@ -31,6 +31,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="#special" data-tab="special">
+                                <i data-feather="star"></i>
+                                Message Spécial
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="#logs" data-tab="logs">
                                 <i data-feather="file-text"></i>
                                 Logs
@@ -176,6 +182,70 @@
                                 <div class="card-body">
                                     <div id="messagePreview">
                                         <p class="text-muted">Sélectionnez les options pour voir l'aperçu</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Special Message Tab -->
+                <div id="specialTab" class="tab-content">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i data-feather="star"></i>
+                                        Message Spécial: "Dark Vlad ouvre demain !"
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="specialMessageForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="specialGuildSelect" class="form-label">Serveur Discord</label>
+                                                    <select class="form-select" id="specialGuildSelect" required>
+                                                        <option value="">Sélectionner un serveur...</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="specialChannelSelect" class="form-label">Channel de Destination</label>
+                                                    <select class="form-select" id="specialChannelSelect" required>
+                                                        <option value="">Sélectionner un channel...</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="alert alert-info">
+                                                <i data-feather="info"></i>
+                                                Message qui sera envoyé: <strong>"Dark Vlad ouvre demain !"</strong>
+                                            </div>
+                                        </div>
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-warning" id="sendSpecialBtn">
+                                                <i data-feather="star"></i>
+                                                Envoyer le Message Spécial
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Aperçu du Message Spécial</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="specialMessagePreview">
+                                        <div class="special-message-preview">
+                                            Dark Vlad ouvre demain !
+                                        </div>
                                     </div>
                                 </div>
                             </div>
