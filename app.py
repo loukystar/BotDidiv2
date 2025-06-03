@@ -1,6 +1,9 @@
 import os
 import asyncio
 import json
+import threading
+import time
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify
 from discord_client import DiscordClient
 import logging
@@ -17,6 +20,17 @@ discord_client = None
 
 # Configuration du canal par défaut
 DEFAULT_CHANNEL_ID = os.getenv('DEFAULT_CHANNEL_ID', '872776677523070979')  # ID du canal prédéfini
+
+# Variables globales pour le scheduler
+scheduler_thread = None
+scheduler_running = False
+auto_ping_config = {
+    'enabled': False,
+    'guild_id': None,
+    'role_id': None,
+    'interval_hours': 4,
+    'last_sent': None
+}
 
 @app.route('/')
 def index():
@@ -298,13 +312,132 @@ def send_special_message():
         logger.error(f"Erreur lors de l'envoi du message spécial : {str(e)}")
         return jsonify({'success': False, 'error': f'Erreur d\'envoi : {str(e)}'})
 
+def scheduler_worker():
+    """Thread worker pour envoyer les messages automatiquement"""
+    global scheduler_running, auto_ping_config, discord_client
+    
+    logger.info("Scheduler automatique démarré")
+    
+    while scheduler_running:
+        try:
+            if (auto_ping_config['enabled'] and 
+                discord_client and 
+                discord_client.is_connected() and
+                auto_ping_config['guild_id'] and 
+                auto_ping_config['role_id']):
+                
+                now = datetime.now()
+                
+                # Vérifier si c'est le moment d'envoyer
+                if (auto_ping_config['last_sent'] is None or 
+                    now - auto_ping_config['last_sent'] >= timedelta(hours=auto_ping_config['interval_hours'])):
+                    
+                    # Envoyer le message automatique
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    
+                    try:
+                        result = loop.run_until_complete(
+                            discord_client.send_role_ping(
+                                auto_ping_config['guild_id'],
+                                int(DEFAULT_CHANNEL_ID),
+                                auto_ping_config['role_id'],
+                                f"Message automatique (toutes les {auto_ping_config['interval_hours']}h)"
+                            )
+                        )
+                        
+                        if result['success']:
+                            auto_ping_config['last_sent'] = now
+                            logger.info(f"Message automatique envoyé avec succès à {now.strftime('%H:%M:%S')}")
+                        else:
+                            logger.error(f"Échec envoi automatique : {result['error']}")
+                            
+                    except Exception as e:
+                        logger.error(f"Erreur lors de l'envoi automatique : {str(e)}")
+                    finally:
+                        loop.close()
+            
+            # Attendre 60 secondes avant la prochaine vérification
+            time.sleep(60)
+            
+        except Exception as e:
+            logger.error(f"Erreur dans le scheduler : {str(e)}")
+            time.sleep(60)
+    
+    logger.info("Scheduler automatique arrêté")
+
+def start_scheduler():
+    """Démarrer le scheduler automatique"""
+    global scheduler_thread, scheduler_running
+    
+    if not scheduler_running:
+        scheduler_running = True
+        scheduler_thread = threading.Thread(target=scheduler_worker, daemon=True)
+        scheduler_thread.start()
+        logger.info("Scheduler automatique activé")
+
+def stop_scheduler():
+    """Arrêter le scheduler automatique"""
+    global scheduler_running
+    
+    scheduler_running = False
+    logger.info("Scheduler automatique désactivé")
+
+@app.route('/api/auto-ping/config', methods=['GET', 'POST'])
+def auto_ping_config_route():
+    """Configuration du ping automatique"""
+    global auto_ping_config
+    
+    if request.method == 'GET':
+        return jsonify({
+            'success': True,
+            'config': auto_ping_config.copy()
+        })
+    
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            
+            if 'enabled' in data:
+                auto_ping_config['enabled'] = bool(data['enabled'])
+                
+                if auto_ping_config['enabled']:
+                    start_scheduler()
+                else:
+                    stop_scheduler()
+            
+            if 'guild_id' in data:
+                auto_ping_config['guild_id'] = int(data['guild_id']) if data['guild_id'] else None
+                
+            if 'role_id' in data:
+                auto_ping_config['role_id'] = int(data['role_id']) if data['role_id'] else None
+                
+            if 'interval_hours' in data:
+                auto_ping_config['interval_hours'] = int(data['interval_hours'])
+            
+            logger.info(f"Configuration auto-ping mise à jour : {auto_ping_config}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Configuration mise à jour',
+                'config': auto_ping_config.copy()
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur de configuration auto-ping : {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': f'Erreur de configuration : {str(e)}'
+            })
+
 @app.route('/api/config', methods=['GET'])
 def get_config():
     """Récupérer la configuration actuelle"""
     return jsonify({
         'has_token': bool(os.getenv('DISCORD_BOT_TOKEN', '')),
         'has_default_channel': bool(DEFAULT_CHANNEL_ID),
-        'default_channel_id': DEFAULT_CHANNEL_ID if DEFAULT_CHANNEL_ID else None
+        'default_channel_id': DEFAULT_CHANNEL_ID if DEFAULT_CHANNEL_ID else None,
+        'auto_ping': auto_ping_config.copy()
     })
 
 if __name__ == '__main__':

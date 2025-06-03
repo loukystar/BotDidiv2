@@ -27,6 +27,10 @@ const elements = {
     customMessage: document.getElementById('customMessage'),
     specialGuildSelect: document.getElementById('specialGuildSelect'),
     specialChannelSelect: document.getElementById('specialChannelSelect'),
+    autoPingEnabled: document.getElementById('autoPingEnabled'),
+    autoPingGuildSelect: document.getElementById('autoPingGuildSelect'),
+    autoPingRoleSelect: document.getElementById('autoPingRoleSelect'),
+    autoPingInterval: document.getElementById('autoPingInterval'),
     
     // Buttons
     connectBtn: document.getElementById('connectBtn'),
@@ -34,6 +38,7 @@ const elements = {
     disconnectBtn: document.getElementById('disconnectBtn'),
     sendBtn: document.getElementById('sendBtn'),
     sendSpecialBtn: document.getElementById('sendSpecialBtn'),
+    saveAutoPingBtn: document.getElementById('saveAutoPingBtn'),
     toggleToken: document.getElementById('toggleToken'),
     clearLogs: document.getElementById('clearLogs'),
     
@@ -76,6 +81,7 @@ function initializeEventListeners() {
     elements.connectionForm.addEventListener('submit', handleConnection);
     elements.messageForm.addEventListener('submit', handleSendMessage);
     document.getElementById('specialMessageForm').addEventListener('submit', handleSendSpecialMessage);
+    document.getElementById('autoPingForm').addEventListener('submit', handleSaveAutoPing);
     
     // Buttons
     elements.autoConnectBtn.addEventListener('click', handleAutoConnection);
@@ -89,6 +95,7 @@ function initializeEventListeners() {
     elements.channelSelect.addEventListener('change', handleChannelChange);
     elements.customMessage.addEventListener('input', updateMessagePreview);
     elements.specialGuildSelect.addEventListener('change', handleSpecialGuildChange);
+    elements.autoPingGuildSelect.addEventListener('change', handleAutoPingGuildChange);
     
     // Auto-refresh status
     setInterval(checkConnectionStatus, 30000); // Check every 30 seconds
@@ -113,6 +120,10 @@ function handleTabClick(e) {
     }
     if (targetTab === 'special' && appState.connected) {
         loadSpecialGuilds();
+    }
+    if (targetTab === 'autopings' && appState.connected) {
+        loadAutoPingGuilds();
+        loadAutoPingConfig();
     }
 }
 

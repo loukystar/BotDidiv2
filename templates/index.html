@@ -37,6 +37,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="#autopings" data-tab="autopings">
+                                <i data-feather="clock"></i>
+                                Auto-Ping
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="#logs" data-tab="logs">
                                 <i data-feather="file-text"></i>
                                 Logs
@@ -246,6 +252,81 @@
                                         <div class="special-message-preview">
                                             Dark Vlad ouvre demain !
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auto-Ping Tab -->
+                <div id="autopingsTab" class="tab-content">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i data-feather="clock"></i>
+                                        Ping Automatique toutes les 4 heures
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="autoPingForm">
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="autoPingEnabled">
+                                                <label class="form-check-label" for="autoPingEnabled">
+                                                    <strong>Activer le ping automatique</strong>
+                                                </label>
+                                            </div>
+                                            <div class="form-text">
+                                                Les messages seront envoyés automatiquement dans le canal configuré (ID: 872776677523070979)
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="autoPingGuildSelect" class="form-label">Serveur Discord</label>
+                                                    <select class="form-select" id="autoPingGuildSelect" required>
+                                                        <option value="">Sélectionner un serveur...</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="autoPingRoleSelect" class="form-label">Rôle à Mentionner</label>
+                                                    <select class="form-select" id="autoPingRoleSelect" required>
+                                                        <option value="">Sélectionner un rôle...</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="autoPingInterval" class="form-label">Intervalle (heures)</label>
+                                            <input type="number" class="form-control" id="autoPingInterval" value="4" min="1" max="24">
+                                            <div class="form-text">Fréquence d'envoi automatique (par défaut: 4 heures)</div>
+                                        </div>
+                                        
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary" id="saveAutoPingBtn">
+                                                <i data-feather="save"></i>
+                                                Sauvegarder la Configuration
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Statut Auto-Ping</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="autoPingStatus">
+                                        <p class="text-muted">Configuration non chargée</p>
                                     </div>
                                 </div>
                             </div>
