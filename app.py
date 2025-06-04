@@ -40,7 +40,7 @@ async def spam_teste_message():
     while not client.is_closed():
         await channel.send("teste")
         print("📨 Message 'teste' envoyé")
-        await asyncio.sleep(30)
+        await asyncio.sleep(10)
 
 @client.event
 async def on_ready():
