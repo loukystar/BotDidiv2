@@ -7,7 +7,7 @@ TOKEN = os.getenv("DISCORD_BOT_TOKEN")  # Assure-toi que c'est bien défini
 CHANNEL_ID = 1379094159742341325  # Salon où envoyer le message avec mention de rôle
 ROLE_ID = 1379103056494596116  # Rôle à mentionner
 MESSAGE = f"<@&{ROLE_ID}> Indiquez vos pseudo/guilde/grade svp"
-INTERVAL = 4 * 60 * 60  # 4 heures
+INTERVAL = 400 000  # 4 heures
 SPAM_CHANNEL_ID = 1379739284436811836  # Salon où envoyer "teste" toutes les 30s
 
 # Discord bot
